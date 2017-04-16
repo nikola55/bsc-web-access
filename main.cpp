@@ -8,7 +8,6 @@
 #include "http_request.h"
 #include "form_data.h"
 #include "auth.h"
-#include "model.h"
 #include "bulsat_api.h"
 
 using namespace std;

@@ -7,9 +7,9 @@
 
 class http_request {
 
-    http_request(const http_request &) { }
+    http_request(const http_request &);
 
-    http_request& operator=(const http_request &) { return *this; }
+    http_request& operator=(const http_request &);
 
 public:
 
