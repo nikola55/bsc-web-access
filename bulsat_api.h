@@ -2,30 +2,11 @@
 #define BULSAT_API_H
 
 #include <string>
-#include <list>
+#include <vector>
 
 #include "http_request.h"
 
-struct response_program {
-    std::string start_ts;
-    std::string stop_ts;
-    std::string title;
-    std::string desc;
-};
-
-struct response_channel  {
-    std::string channel;
-    std::string epg_name;
-    std::string title;
-    std::string genre;
-    bool radio;
-    std::string sources;
-    response_program program;
-};
-
-struct response_authentication {
-    std::string logged;
-};
+#include "structs.h"
 
 class bulsat_api {
 public:
@@ -46,10 +27,11 @@ public:
     void logout();
 public:
     typedef void(*on_login_result)(int, const response_authentication&, void*);
-    typedef void(*on_channel_list_result)(int, const std::list<response_channel>&, void*);
+    typedef void(*on_channel_list_result)(int, std::vector<response_channel*>* /* transfer ownership*/, void*);
 
     void set_on_login_result(on_login_result, void*);
     void set_on_channel_list_result(on_channel_list_result, void*);
+    void set_on_logout_result(on_login_result, void*);
 
 private:
     std::string user_;
@@ -61,7 +43,6 @@ private:
     std::string channel_url_;
     session_state session_state_;
     response_authentication auth_response_;
-    std::list<response_channel> channel_list_;
     std::string cookie_file_;
     std::string session_;
     std::string session_key_;
@@ -69,6 +50,8 @@ private:
     void* on_login_result_ctx_;
     on_channel_list_result on_channel_list_result_cb_;
     void* on_channel_list_result_ctx_;
+    on_login_result on_logout_result_cb_;
+    void* on_logout_result_ctx_;
 };
 
 #endif // BULSAT_API_H
