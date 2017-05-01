@@ -8,16 +8,17 @@
 using namespace std;
 
 void print_usage_and_exit(const char *name) {
-    std::cerr << name << " (logout)|(login <user> <pass> <playlist>) " << std::endl;
+    std::cerr << name << " (logout <user> <pass>)|(login <user> <pass> <playlist>) " << std::endl;
     exit(1);
 }
 
 class bsc_handler {
 public:
 
-    bsc_handler(bulsat_api& bsc_api, const std::string& playlist)
+    bsc_handler(bulsat_api& bsc_api, const std::string& playlist, bool login)
         : bulsat_api_(bsc_api)
-        , playlist_(playlist) {
+        , playlist_(playlist)
+        , login_(login) {
 
         bulsat_api_.set_on_login_result(&bsc_handler::on_login_result, this);
         bulsat_api_.set_on_channel_list_result(&bsc_handler::on_channels_result, this);
@@ -39,9 +40,14 @@ private:
 
     void login_result_handler(int code, const response_authentication& res) {
         if(code == 200 && res.logged == "true") {
-            bulsat_api_.request_channel_list();
+            std::clog << "BSC HANDLER: on_login_result: logged in" << std::endl;
+            if(login_) {
+                bulsat_api_.request_channel_list();
+            } else {
+                bulsat_api_.logout();
+            }
         } else {
-            std::clog << "failed to login" << std::endl;
+            std::clog << "BSC HANDLER: on_login_result: failed to login" << std::endl;
         }
     }
 
@@ -53,7 +59,7 @@ private:
     void channel_list_result_handler(int code, std::vector<response_channel*> *channels) {
 
         if(code != 200) {
-            std::clog << "failed to reqeust channels list" << std::endl;
+            std::clog << "BSC HANDLER: channel_list_result_handler: failed to reqeust channels list" << std::endl;
             return;
         }
 
@@ -83,7 +89,7 @@ private:
             delete channels->back();
         delete channels;
 
-        std::clog << "playlist generated and stored in " << playlist_ << std::endl;
+        std::clog << "BSC HANDLER: channel_list_result_handler: playlist generated and stored in " << playlist_ << std::endl;
 
     }
 
@@ -94,9 +100,9 @@ private:
 
     void logout_result_handler(int res_code, const response_authentication& res) {
         if(res_code == 200 && res.logged == "false") {
-            std::clog << "logged out" << std::endl;
+            std::clog << "BSC HANDLER: logout_result_handler: logged out" << std::endl;
         } else {
-            std::clog << "failed to logout" << std::endl;
+            std::clog << "BSC HANDLER: logout_result_handler: failed to logout" << std::endl;
         }
     }
 
@@ -107,12 +113,13 @@ public:
     }
 
     void logout_execute() {
-        bulsat_api_.logout();
+        bulsat_api_.login();
     }
 
 private:
     bulsat_api& bulsat_api_;
     const std::string playlist_;
+    bool login_;
 };
 
 int main(int argc, char *argv[]) {
@@ -146,13 +153,16 @@ int main(int argc, char *argv[]) {
         playlist = argv[4];
 
     } else {
-        if(argc != 2)
+        if(argc != 4)
             print_usage_and_exit(argv[0]);
+
+        user = argv[2];
+        pass = argv[3];
     }
 
     bulsat_api bsc_api("cookies.txt", user, pass);
 
-    bsc_handler handler(bsc_api, playlist);
+    bsc_handler handler(bsc_api, playlist, login);
 
     if(login) {
         handler.login_execute();
