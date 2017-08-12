@@ -20,7 +20,9 @@ playlist_server::playlist_server(event_base* base,
     , http_(NULL)
     , handle_(NULL)
     , refresh_timer_(event_new(base_, -1, EV_PERSIST, &playlist_server::on_refresh_playlist, this))
+    , port_(port)
     , path_(path)
+    , refresh_rate_sec_(refresh_rate_sec)
     , api_("", bsc_user, bsc_pass)
     , logged_in_(false)
     , have_channels_(false)
@@ -29,21 +31,6 @@ playlist_server::playlist_server(event_base* base,
 
     api_.set_on_login_result(&playlist_server::on_login_result, this);
     api_.set_on_channel_list_result(&playlist_server::on_channel_list_result, this);
-
-    http_ = evhttp_new(base_);
-    assert(NULL != http_);
-    handle_ = evhttp_bind_socket_with_handle(http_, "127.0.0.1", port);
-    if(NULL == handle_) {
-        std::clog << "BSC HANDLER: playlist_server: bind failed " << std::strerror(errno) << std::endl;
-    }
-
-    evhttp_set_cb(http_, path.c_str(), &playlist_server::write_playlist, this);
-    evhttp_set_gencb(http_, &playlist_server::write_default, this);
-
-    timeval timeout;
-    timeout.tv_sec = refresh_rate_sec;
-    timeout.tv_usec = 0;
-    event_add(refresh_timer_, &timeout);
 
 }
 
@@ -54,6 +41,22 @@ playlist_server::~playlist_server() {
 
 bool playlist_server::initialize() {
     api_.login();
+
+    http_ = evhttp_new(base_);
+    assert(NULL != http_);
+    handle_ = evhttp_bind_socket_with_handle(http_, "127.0.0.1", port_);
+    if(NULL == handle_) {
+        std::clog << "BSC HANDLER: playlist_server: bind failed " << std::strerror(errno) << std::endl;
+    }
+
+    evhttp_set_cb(http_, path_.c_str(), &playlist_server::write_playlist, this);
+    evhttp_set_gencb(http_, &playlist_server::write_default, this);
+
+    timeval timeout;
+    timeout.tv_sec = refresh_rate_sec_;
+    timeout.tv_usec = 0;
+    event_add(refresh_timer_, &timeout);
+
     return logged_in_ && have_channels_;
 }
 

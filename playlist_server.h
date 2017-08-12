@@ -47,7 +47,9 @@ private:
     evhttp* http_;
     evhttp_bound_socket* handle_;
     event* refresh_timer_;
+    int port_;
     const std::string path_;
+    int refresh_rate_sec_;
     bulsat_api api_;
     bool logged_in_;
     bool have_channels_;
