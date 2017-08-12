@@ -21,7 +21,7 @@ public:
                     const std::string& bsc_pass,
                     int port = 1989,
                     const std::string& path = "/bulsat_playlist.m3u8",
-                    unsigned refresh_rate_sec = (60*60*4) /* 4 hours by default */);
+                    unsigned refresh_rate_sec = (5) /* 4 hours by default */);
     ~playlist_server();
 public:
     bool initialize(); // perform login and playlist update on the main thread

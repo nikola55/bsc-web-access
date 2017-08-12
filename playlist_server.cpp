@@ -2,6 +2,8 @@
 
 #include <sstream>
 #include <iostream>
+#include <cassert>
+#include <cstring>
 
 #include <event2/http.h>
 #include <event2/buffer.h>
@@ -15,8 +17,8 @@ playlist_server::playlist_server(event_base* base,
                                 unsigned refresh_rate_sec
                                 )
     : base_(base)
-    , http_(evhttp_new(base_))
-    , handle_(evhttp_bind_socket_with_handle(http_, "0.0.0.0", port))
+    , http_(NULL)
+    , handle_(NULL)
     , refresh_timer_(event_new(base_, -1, EV_PERSIST, &playlist_server::on_refresh_playlist, this))
     , path_(path)
     , api_("", bsc_user, bsc_pass)
@@ -27,6 +29,13 @@ playlist_server::playlist_server(event_base* base,
 
     api_.set_on_login_result(&playlist_server::on_login_result, this);
     api_.set_on_channel_list_result(&playlist_server::on_channel_list_result, this);
+
+    http_ = evhttp_new(base_);
+    assert(NULL != http_);
+    handle_ = evhttp_bind_socket_with_handle(http_, "127.0.0.1", port);
+    if(NULL == handle_) {
+        std::clog << "BSC HANDLER: playlist_server: bind failed " << std::strerror(errno) << std::endl;
+    }
 
     evhttp_set_cb(http_, path.c_str(), &playlist_server::write_playlist, this);
     evhttp_set_gencb(http_, &playlist_server::write_default, this);
