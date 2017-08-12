@@ -4,12 +4,14 @@
 #include <fstream>
 
 #include "bulsat_api.h"
+#include "playlist_server.h"
+
+#include <event2/event.h>
 
 using namespace std;
 
-void print_usage_and_exit(const char *name) {
-    std::cerr << name << " (logout <user> <pass>)|(login <user> <pass> <playlist>) " << std::endl;
-    exit(1);
+void print_usage(const char *name) {
+    std::cerr << name << " <user> <pass>" << std::endl;
 }
 
 class bsc_handler {
@@ -126,49 +128,24 @@ int main(int argc, char *argv[]) {
 
     bool login = false;
 
-    if(argc < 2) {
-        print_usage_and_exit(argv[0]);
-    } else {
-        std::string cmd = argv[1];
-        if(cmd == "login") {
-            login = true;
-        } else if (cmd == "logout") {
-            login = false;
-        } else {
-            print_usage_and_exit(argv[0]);
-        }
+    if(argc != 3) {
+        print_usage(argv[0]);
+        return 1;
     }
 
-    std::string user;
-    std::string pass;
-    std::string playlist;
+    std::string bsc_user = argv[1];
+    std::string bsc_pass = argv[2];
 
-    if(login) {
+    event_base* base = event_base_new();
 
-        if(argc != 5)
-            print_usage_and_exit(argv[0]);
+    playlist_server server(base, bsc_user, bsc_pass);
 
-        user = argv[2];
-        pass = argv[3];
-        playlist = argv[4];
-
-    } else {
-        if(argc != 4)
-            print_usage_and_exit(argv[0]);
-
-        user = argv[2];
-        pass = argv[3];
+    if(!server.initialize()) {
+        return 1;
     }
 
-    bulsat_api bsc_api("cookies.txt", user, pass);
-
-    bsc_handler handler(bsc_api, playlist, login);
-
-    if(login) {
-        handler.login_execute();
-    } else {
-        handler.logout_execute();
-    }
+    event_base_dispatch(base);
+    event_base_free(base);
 
     return 0;
 }

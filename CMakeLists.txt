@@ -12,10 +12,10 @@ set(SRC_LIST
     structs.cpp
 )
 
-add_definitions(-std=c++03)
+# add_definitions(-std=c++03)
 
 include_directories("${PROJECT_SOURCE_DIR}/jsoncpp/include")
 add_subdirectory(jsoncpp)
 
 add_executable(${PROJECT_NAME} ${SRC_LIST})
-target_link_libraries(${PROJECT_NAME} jsoncpp ssl crypto curl)
+target_link_libraries(${PROJECT_NAME} jsoncpp ssl crypto curl event_core event_extra pthread)
