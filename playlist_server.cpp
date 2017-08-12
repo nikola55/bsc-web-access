@@ -178,6 +178,6 @@ void playlist_server::handle_on_refresh_playlist() {
 }
 
 void playlist_server::update_task() {
-    api_.login();
+    api_.request_channel_list();
     updating_ = false;
 }

@@ -144,6 +144,8 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    std::clog << " Working ... " << std::endl;
+
     event_base_dispatch(base);
     event_base_free(base);
 
